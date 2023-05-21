@@ -11,6 +11,7 @@ import random
 import numpy as np
 import scipy.linalg as linalg 
 import matplotlib.pyplot as plt
+from sympy import jacobi
 
 # Functions
 ## Square matrix
@@ -124,33 +125,36 @@ def my_jacobi(A, b, k, n):
                                 print("  Considerando v = D^-1 * b")
                                 ba = np.array(b)
                                 v = np.dot(Dinv,b)
-                                print("  v es: ")
-                                print(v)
+                                print(f"  v es: {print_str_matrix(v)}")
                                 print("                                                                                  ")
                                 print("  Para comenzar tomaremos el vector inicial Xo:")
-                                x0 = b
-                                print("  X0 es: ")
-                                print(x0)
+                                x0 = my_zero_vector(A)
+                                print(f"  X0 es: {print_str_matrix(x0)}")
                                 print("  Consideraremos el error como la norma de la diferencia entre X0 y X1:           ")
                                 print("  error = || x - x-1 ||                                                           ")
-                                print("  Y una tolerancia de 1e-3                                                        ")
-                                tol = 1e-3
+                                print("  Y una tolerancia de 1e-2                                                        ")
+                                tol = 1e-2
+                                e = 1000
                                 print("                                                                                  ")
+                                # Se guardan los valores de x para imprimirlos en el plot
+                                solutions = [x0]
+                                errors = []
                                 for i in range(k):
-                                    # Calcula el vector solución de Jacobi para la iteración
+                                    # Calcula la solución por Jacobi para la iteración
                                     x = my_x(H, v, x0)
-                                    print(f"  En la Iteración {i+1} el vector resultante x es: {print_matrix(x)}, con un vector x-1: {print(x0)}")
+                                    print(f"  En la Iteración {i+1} el vector resultante x es: {print_str_matrix(x)}, con un vector x0: {print_str_matrix(x0)}")
+                                    solutions.append(x)
                                     # Verifica el error a partir de la segunda iteración
-                                    if i < 0:
-                                        # Calcula el error 
-                                        e = linalg.norm(x - x0)
-                                        print(f"  El error es esta iteración {i+1} es de: {e}")
-                                    # Reasigna el nuevo X0 como el X del paso anterior
+                                    e = linalg.norm(x - x0)
+                                    errors.append(e)
+                                    print(f"  El error es esta iteración {i+1} es de: {e:.2f}")
                                     if (e < tol):
                                         break
+                                    
+                                    # Reasigna el nuevo X0 como el X del paso anterior                                           
                                     x0 = x
-
-                                return x, e
+                                print_matrix_graphics(solutions) 
+                                print_error_graphics(errors)                 
 
 ## Calculates H
 def my_H(dinv, L, U):
@@ -158,9 +162,11 @@ def my_H(dinv, L, U):
     H = -np.dot(dinv, LU)
     return H
 
+## Calculates x
 def my_x(H, v, x0):
     mul = np.dot(H, x0)
     final = mul + v
+    return final
     
 ## Creates a matrix with n parameter
 def my_generate_matrix(n):
@@ -174,15 +180,39 @@ def print_matrix(A):
     for row in a: 
         # Si el valor es int lo imprime como tal, si es un float lo trunca a un decimal
         print(*[f"{value:.1f}" if not value.is_integer() else f"{value:.0f}" for value in row])
+        
+def print_str_matrix(A):
+    cadena = "" 
+    for i in A: 
+        if i.is_integer(): 
+            cadena += str(int(i)) + " " 
+        else: 
+            cadena += "{:.1f} ".format(i) 
+    return cadena
 
-## Print matrix graphics
-def print_matrix_graphics(x):
-    plt.plot(x)
+## Plot matrix
+def print_matrix_graphics(sol):
+    # Calcula la cantidad de Iteraciones para el eje Y
+    iter = range(len(sol))
+    # Configura la gráfica de los valores del vector solución en función del número de iteraciones
+    plt.plot(iter, sol)
     plt.gca().set_facecolor('#e9edc9')
-    plt.xlabel('Índice')
-    plt.ylabel('Solución')
-    plt.title('Solución del Sistema Linear usando Método LU')
+    plt.xlabel('Iteración')
+    plt.ylabel('Error')
+    plt.title('Evolución de Error usando Método Jacobi')
     plt.show() 
+    
+## Plot error
+def print_error_graphics(es):
+    # Calcula la cantidad de Iteraciones para el eje Y
+    iter = range(len(es))
+    # Configura la gráfica de los valores del vector solución en función del número de iteraciones
+    plt.plot(iter, es)
+    plt.gca().set_facecolor('#e9edc9')
+    plt.xlabel('Iteración')
+    plt.ylabel('Solución x')
+    plt.title('Solución del Sistema Linear usando Método Jacobi')
+    plt.show()    
   
 # Dataset
 non_square = [[1,2,3],[4,5,6]]
@@ -195,15 +225,17 @@ almost_doable_matrix = [[3, 2, 1],[1, 2, 1],[1, 2, 3]]
 
 doable_matrix = [[5, 2, 1],[1, 6, 3],[2, 3, 7]]
 
-b3 = [0, 0, 0]
+doable_matrix_2 = [[2, 1],[1, 2]]
 
-b2 = [0, 0]
+b3 = [1, 2, 3]
+
+b2 = [1, 2]
 
 # Prints
 ## null) Task + Pres
 print("                                                                                  ")
 print("**********************************************************************************")
-print("*                  METODOS NUMERICOS - 2023 - TP METODO LU                       *")
+print("*                 METODOS NUMERICOS - 2023 - TP METODO JACOBI                    *")
 print("**********************************************************************************")
 print("    • Alumna: Denise Martin                                                       ")
 print("                                                                                  ")
@@ -265,65 +297,95 @@ print("*                                    EJEMPLOS                            
 print("**********************************************************************************")
 print("    • Se comprueba si la matriz es cuadrada:                                      ")
 my_jacobi(non_square, b3, 6, 3)
-print("                                                                                  ")
+print("                                 ************                                     ")
 print("    • Se comprueba si la diagonal es estrictamente dominante:                     ")
 my_jacobi(diag_not_dominant, b3, 6, 3)
-print("                                                                                  ")
+print("                                 ************                                     ")
 print("    • Se comprueba si la matriz tiene determinante = 0                            ")
 my_jacobi(det_zero, b3, 6, 3)
-print("                                                                                  ")
+print("                                 ************                                     ")
 print("    • Se comprueba si la norma de H > 1:                                          ") 
 my_jacobi(almost_doable_matrix, b3, 6, 3)
-print("                                                                                  ")
+print("                                 ************                                     ")
 print("    • Si cumple todos los requisitos, se emiten todos los valores y cálculos:     ") 
-my_jacobi(doable_matrix, b3, 6, 3)
+print("    Para iniciar asignaremos un K = 6 a una matriz de 3 * 3                       ") 
+x = my_jacobi(doable_matrix, b3, 6, 3)
+print("                                                                                  ") 
+print("    Puede verse la tendencia a converger pero aun no llega a un resultado         ")
+print("                                                                                  ")
+print("    • Ahora la misma matriz pero con un K = 1000 para constatar que si converge   ") 
+print("      El programa deberia terminar antes del paso 1000                            ") 
+x = my_jacobi(doable_matrix, b3, 1000, 3)
+print("                                                                                  ") 
+print("    Puede verse la convergencia según la tolerancia el el paso 12 donde corta el programa.") 
+print("                                                                                  ") 
 
-## III) Comparación Extra
-""" import autograd.numpy as autog
-from autograd import jacobian
+## III) Extra Comparison by Calculator
+def jacobi_method(A, b): 
+    tol = 1e-2
+    n = len(A) 
+    x = np.zeros(n) 
+    x_prev = np.zeros(n) 
+    while True: 
+        for i in range(n): 
+            s = sum(A[i][j] * x_prev[j] for j in range(n) if j != i) 
+            x[i] = (b[i] - s) / A[i][i] 
+        if np.linalg.norm(x - x_prev) < tol: 
+            return x 
+        x_prev = np.copy(x) 
 
-x = autog.array([5, 3], dtype=float)
+print("                                                                                  ")
+print("   + Se puede verificar con calculadora:                                         ") 
+x = jacobi_method(doable_matrix, b3)
+print_str_matrix(x)
+print("                                 ************                                     ")
+print("    • Si cumple todos los requisitos, se emiten todos los valores y cálculos:     ") 
+print("    Para iniciar asignaremos un K = 6 a una matriz de 2 * 2                       ") 
+x = my_jacobi(doable_matrix_2, b2, 6, 2)
+print("                                                                                  ") 
+print("    Puede verse la tendencia a converger pero aun no llega a un resultado         ")
+print("                                                                                  ")
+print("    • Ahora la misma matriz pero con un K = 1000 para constatar que si converge   ") 
+print("      El programa deberia terminar antes del paso 1000                            ") 
+x = my_jacobi(doable_matrix_2, b2, 1000, 2)
+print("                                                                                  ") 
+print("    Puede verse la convergencia según la tolerancia el el paso 8 donde corta el programa.") 
+print("                                                                                  ") 
+print("   + Se puede verificar con calculadora:                                         ") 
+x = jacobi_method(doable_matrix_2, b2)
+print_str_matrix(x)
 
-def cost(x):
-    return x[0]**2 / x[1] - autog.log(x[1])
-
-jacobian_cost = jacobian(cost)
-
-jacobian_cost(autog.array([x, x, x]))
- """
 
 ## IV) Conclusions
 print("                                                                                  ")
 print("**********************************************************************************")
 print("*                                  CONCLUSIONES                                  *")
 print("**********************************************************************************")
-print(" • El Método de descomposición LU, también es es un método semi-numérico, cuyo    ")
-print("   criterio de convergencia no es del todo limpio. Como ventaja no requiere       ") 
-print("   aproximación inicial, sin embargo continúa siendo un método donde se resuelven ")
-print("   dos sistemas lineales.                                                         ")
+print(" • El Método Jacobi es un método simple de implementar e incluso puede utilizarse,")
+print("   como base para otros métodos iteraticos.                                       ") 
 print("                                                                                  ")
-print(" • Es un método inestable ya que si alguno o varios elementos de la diagonal principal ")
-print("   son cero, se debe premultiplicar la matriz por alguna elemental de permutación, ") 
-print("   para poder aplicar la factorización.                                           ") 
+print(" • Es un método lento de convergencia en los casos donde la diagonal no es        ")
+print("   estrictamente dominante, ya que se incrementa el número de iteraciones para    ") 
+print("   llegar al resultado.                                                          ") 
 print("                                                                                  ")
-print(" • Es un método no tan utilizado ya que requiere matrices n*n que no son siempre  ")
-print("   frecuentes.                                                                     ") 
+print(" • La descomposicion de la matriz no requiere de la resolución de sistemas lineales,")
+print("   lo cual es ventajoso frente a otros métodos exactos, sin embargo las iteraciones ") 
+print("   si lo utilizan.                                                                ") 
 print("                                                                                  ")
-print(" • Se utiliza principalmente por su facilidad en resolucionde matrices triangulares.")
+print(" • Aqui se muetra la varificación de requisitos necesarios para realizar Jacobi, previo ")
+print("   a la resolución de la misma. Si pasa todas las verificaciones, se imprimen los    ")
+print("   pasos siguientes con sus correspondientes verificaciones.                      ")
+print("   Cabe destacar que se asegura su convergencia si pasan los requisitos, sin embargo")
+print("   podría converger aún en caso de no cumnplirlos.                                  ")
+print("   Es el caso de la diagonal estrictamente dominante donde se encuentra el mayor problema")
+print("   ya que es difícil encontrar dichas matrices en la naturaleza.                  ")
 print("                                                                                  ")
-print(" • Aqui se muetra la varificación de requisitos necesarios para realuzar LU, previo ")
-print("   a la resución de la misma. Si pasa todas las verificaciones, se imprime las    ")
-print("   matrices para ver las posibilidades de operaciones. En este caso pasa por un método")
-print("   genérico, que se describió en la teoría, pero hay que considerar que en caso de")
-print("   aparecer unos en la matriz U, deben descontarse operaciones: para ello se uso una")
-print("   funcion para contabilizar los unos en la matriz U  y en la matriz L, por separado")
-print("   y descontar así esas operaciones despreciadas.                                  ")
+print(" • NOTA 1: En las líneas 26 y 29 estan comentados los print para imprimir las operaciones")
+print("         de la funcion que revisa si la diagonal es dominante. Puedes descomentarse ")
+print("         para observar dicho comportamiento. ")
 print("                                                                                  ")
-print(" • NOTA: Las líneas 24 a 36 sirven para calcular la inversa de la matriz.         ")
-print("         Como exede lo pedido por el TP ha quedado en desuso pero es funcional.   ")
-print("         Se considera que el hecho de tener un determinante distinto a cero de la ")
-print("         matriz, ya comprueba que es posible hacer la inversion de la misma.     ")
-print("         Puede utilizarse en caso de querer imprimir la inversa de la matriz en cuestión.")
+print(" • NOTA 1: En la línea 35 esta comentado el print para imprimir las determinante de ")
+print("         la matriz que se está evaluando. Puede descomentarse para observar dicho comportamiento ")
 print("                                                                                  ")
 
 
