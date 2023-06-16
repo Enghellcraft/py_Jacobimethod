@@ -393,8 +393,8 @@ print("         aleatoria según las dimendiones que se le provean. La idea orig
 print("         poder ingresar un N, en la función de my_jacobi y generar una matriz aleatoria")
 print("         para evaluarla, sin embargo, luego de todas las verificaciones y ante la posibilidad")
 print("         de generar varias matrices que no pasaran la lista de requisitos, decidí ")
-print("         dejarlo funcional pero usable en el código actual. El parámetro n, que se ")
-print("         agrega en Jacobi, es por ahora, meramente decorativo. ")
+print("         dejarlo funcional pero no usable en el código actual. El parámetro n, que se ")
+print("         agrega en Jacobi, por ahora, es meramente decorativo. ")
 print("                                                                                  ")
 
 
